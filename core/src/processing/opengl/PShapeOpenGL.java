@@ -33,14 +33,15 @@ import processing.core.PShape;
 import processing.core.PVector;
 import processing.opengl.PGraphicsOpenGL.LineShader;
 import processing.opengl.PGraphicsOpenGL.PointShader;
-import processing.opengl.PGraphicsOpenGL.BaseShader;
 import processing.opengl.PGraphicsOpenGL.IndexCache;
 import processing.opengl.PGraphicsOpenGL.InGeometry;
+import processing.opengl.PGraphicsOpenGL.PolyShader;
 import processing.opengl.PGraphicsOpenGL.TessGeometry;
 import processing.opengl.PGraphicsOpenGL.Tessellator;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Stack;
 
 /**
  * This class holds a 3D model composed of vertices, normals, colors
@@ -155,6 +156,7 @@ public class PShapeOpenGL extends PShape {
   // Geometric transformations.
 
   protected PMatrix transform;
+  protected Stack<PMatrix> transformStack;
 
   // ........................................................
 
@@ -354,8 +356,10 @@ public class PShapeOpenGL extends PShape {
     sphereDetailU = pg.sphereDetailU;
     sphereDetailV = pg.sphereDetailV;
 
-    rectMode = pg.rectMode;
-    ellipseMode = pg.ellipseMode;
+    // The rect and ellipse modes are set to CORNER since it is the expected
+    // mode for svg shapes.
+    rectMode = CORNER;
+    ellipseMode = CORNER;
 
     normalX = normalY = 0;
     normalZ = 1;
@@ -1243,46 +1247,31 @@ public class PShapeOpenGL extends PShape {
 
   @Override
   public void resetMatrix() {
-    if (shapeCreated && matrix != null) {
+    if (shapeCreated && matrix != null && transformStack != null) {
       if (family == GROUP) {
         updateTessellation();
       }
-      boolean res = matrix.invert();
-      if (res) {
-        if (tessellated) {
-          applyMatrixImpl(matrix);
+      if (tessellated) {
+        PMatrix mat = popTransform();
+        while (mat != null) {
+          boolean res = mat.invert();
+          if (res) {
+            applyMatrixImpl(mat);
+          } else {
+            PGraphics.showWarning("Transformation applied on the shape cannot be inverted");
+          }
+          mat = popTransform();
         }
-        matrix = null;
-      } else {
-        PGraphics.showWarning("The transformation matrix cannot be inverted");
       }
+      matrix.reset();
+      transformStack.clear();
     }
   }
 
 
   protected void transform(int type, float... args) {
-    int dimensions;
-    if (type == ROTATE) {
-      dimensions = args.length == 1 ? 2 : 3;
-    } else if (type == MATRIX) {
-      dimensions = args.length == 6 ? 2 : 3;
-    } else {
-      dimensions = args.length;
-    }
-    transformImpl(type, dimensions, args);
-  }
-
-
-  protected void transformImpl(int type, int ncoords, float... args) {
-    checkMatrix(ncoords);
-    calcTransform(type, ncoords, args);
-    if (tessellated) {
-      applyMatrixImpl(transform);
-    }
-  }
-
-
-  protected void calcTransform(int type, int dimensions, float... args) {
+    int dimensions = is3D ? 3 : 2;
+    checkMatrix(dimensions);
     if (transform == null) {
       if (dimensions == 2) {
         transform = new PMatrix2D();
@@ -1293,30 +1282,37 @@ public class PShapeOpenGL extends PShape {
       transform.reset();
     }
 
+    int ncoords = args.length;
+    if (type == ROTATE) {
+      ncoords = args.length == 1 ? 2 : 3;
+    } else if (type == MATRIX) {
+      ncoords = args.length == 6 ? 2 : 3;
+    }
+
     switch (type) {
     case TRANSLATE:
-      if (dimensions == 3) {
+      if (ncoords == 3) {
         transform.translate(args[0], args[1], args[2]);
       } else {
         transform.translate(args[0], args[1]);
       }
       break;
     case ROTATE:
-      if (dimensions == 3) {
+      if (ncoords == 3) {
         transform.rotate(args[0], args[1], args[2], args[3]);
       } else {
         transform.rotate(args[0]);
       }
       break;
     case SCALE:
-      if (dimensions == 3) {
+      if (ncoords == 3) {
         transform.scale(args[0], args[1], args[2]);
       } else {
         transform.scale(args[0], args[1]);
       }
       break;
     case MATRIX:
-      if (dimensions == 3) {
+      if (ncoords == 3) {
         transform.set(args[ 0], args[ 1], args[ 2], args[ 3],
                       args[ 4], args[ 5], args[ 6], args[ 7],
                       args[ 8], args[ 9], args[10], args[11],
@@ -1328,8 +1324,28 @@ public class PShapeOpenGL extends PShape {
       break;
     }
     matrix.apply(transform);
+    pushTransform();
+    if (tessellated) applyMatrixImpl(transform);
   }
 
+
+  protected void pushTransform() {
+    if (transformStack == null) transformStack = new Stack<PMatrix>();
+    PMatrix mat;
+    if (transform instanceof PMatrix2D) {
+      mat = new PMatrix2D();
+    } else {
+      mat = new PMatrix3D();
+    }
+    mat.set(transform);
+    transformStack.push(mat);
+  }
+
+
+  protected PMatrix popTransform() {
+    if (transformStack == null || transformStack.size() == 0) return null;
+    return transformStack.pop();
+  }
 
   protected void applyMatrixImpl(PMatrix matrix) {
     if (hasPolys) {
@@ -1397,9 +1413,9 @@ public class PShapeOpenGL extends PShape {
                       ambientColor, specularColor, emissiveColor, shininess);
     inGeo.setNormal(normalX, normalY, normalZ);
     inGeo.addBezierVertex(x2, y2, z2,
-                       x3, y3, z3,
-                       x4, y4, z4,
-                       fill, stroke, bezierDetail, vertexCode(), kind);
+                          x3, y3, z3,
+                          x4, y4, z4,
+                          fill, stroke, bezierDetail, vertexCode(), kind);
   }
 
 
@@ -1425,8 +1441,8 @@ public class PShapeOpenGL extends PShape {
                       ambientColor, specularColor, emissiveColor, shininess);
     inGeo.setNormal(normalX, normalY, normalZ);
     inGeo.addQuadraticVertex(cx, cy, cz,
-                          x3, y3, z3,
-                          fill, stroke, bezierDetail, vertexCode(), kind);
+                             x3, y3, z3,
+                             fill, stroke, bezierDetail, vertexCode(), kind);
   }
 
 
@@ -3150,7 +3166,6 @@ public class PShapeOpenGL extends PShape {
     if (matrix != null) {
       // Some geometric transformations were applied on
       // this shape before tessellation, so they are applied now.
-      //applyMatrixImpl(matrix);
       if (hasPolys) {
         tessGeo.applyMatrixOnPolyGeometry(matrix,
                                           firstPolyVertex, lastPolyVertex);
@@ -4417,10 +4432,14 @@ public class PShapeOpenGL extends PShape {
 
 
   protected void renderPolys(PGraphicsOpenGL g, PImage textureImage) {
+    boolean customShader = g.polyShader != null;
+    boolean needNormals = customShader ? g.polyShader.accessNormals() : false;
+    boolean needTexCoords = customShader ? g.polyShader.accessTexCoords() : false;
+
     Texture tex = textureImage != null ? g.getTexture(textureImage) : null;
 
     boolean renderingFill = false, renderingStroke = false;
-    BaseShader shader = null;
+    PolyShader shader = null;
     IndexCache cache = tessGeo.polyIndexCache;
     for (int n = firstPolyIndexCache; n <= lastPolyIndexCache; n++) {
       if (is3D() || (tex != null && (firstLineIndexCache == -1 ||
@@ -4463,10 +4482,6 @@ public class PShapeOpenGL extends PShape {
                                 0, 4 * voffset * PGL.SIZEOF_FLOAT);
       shader.setColorAttribute(root.glPolyColor, 4, PGL.UNSIGNED_BYTE,
                                0, 4 * voffset * PGL.SIZEOF_BYTE);
-      shader.setNormalAttribute(root.glPolyNormal, 3, PGL.FLOAT,
-                                0, 3 * voffset * PGL.SIZEOF_FLOAT);
-      shader.setTexcoordAttribute(root.glPolyTexcoord, 2, PGL.FLOAT,
-                                  0, 2 * voffset * PGL.SIZEOF_FLOAT);
 
       if (g.lights) {
         shader.setNormalAttribute(root.glPolyNormal, 3, PGL.FLOAT,
@@ -4479,14 +4494,16 @@ public class PShapeOpenGL extends PShape {
                                     0, 4 * voffset * PGL.SIZEOF_BYTE);
         shader.setShininessAttribute(root.glPolyShininess, 1, PGL.FLOAT,
                                      0, voffset * PGL.SIZEOF_FLOAT);
-      } else if (shader.supportLighting()) {
-        PGraphics.showWarning(PGraphicsOpenGL.LIGHT_SHADER_ERROR);
+      }
+      if (g.lights || needNormals) {
+        shader.setNormalAttribute(root.glPolyNormal, 3, PGL.FLOAT,
+                                  0, 3 * voffset * PGL.SIZEOF_FLOAT);
       }
 
-      if (tex != null) {
+      if (tex != null || needTexCoords) {
+        shader.setTexcoordAttribute(root.glPolyTexcoord, 2, PGL.FLOAT,
+                                    0, 2 * voffset * PGL.SIZEOF_FLOAT);
         shader.setTexture(tex);
-      } else if (shader.supportsTexturing()) {
-        PGraphics.showWarning(PGraphicsOpenGL.TEXTURE_SHADER_ERROR);
       }
 
       pgl.bindBuffer(PGL.ELEMENT_ARRAY_BUFFER, root.glPolyIndex);
