@@ -4380,6 +4380,24 @@ public class PApplet extends Applet
     System.out.flush();
   }
 
+
+  static public void print(Object... variables) {
+    StringBuilder sb = new StringBuilder();
+    for (Object o : variables) {
+      if (sb.length() != 0) {
+        sb.append(" ");
+      }
+      if (o == null) {
+        sb.append("null");
+      } else {
+        sb.append(o.toString());
+      }
+    }
+    System.out.print(sb.toString());
+  }
+
+
+  /*
   static public void print(Object what) {
     if (what == null) {
       // special case since this does fuggly things on > 1.1
@@ -4388,9 +4406,10 @@ public class PApplet extends Applet
       System.out.println(what.toString());
     }
   }
+  */
 
-  //
-/**
+
+  /**
    * ( begin auto-generated from println.xml )
    *
    * Writes to the text area of the Processing environment's console. This is
@@ -4414,7 +4433,7 @@ public class PApplet extends Applet
     System.out.println();
   }
 
-  //
+
 /**
  * @param what boolean, byte, char, color, int, float, String, Object
  */
@@ -4458,7 +4477,41 @@ public class PApplet extends Applet
     System.out.flush();
   }
 
+
+  static public void println(Object... variables) {
+//    System.out.println("got " + variables.length + " variables");
+    print(variables);
+    println();
+  }
+
+
+  /*
+  // Breaking this out since the compiler doesn't know the difference between
+  // Object... and just Object (with an array passed in). This should take care
+  // of the confusion for at least the most common case (a String array).
+  // On second thought, we're going the printArray() route, since the other
+  // object types are also used frequently.
+  static public void println(String[] array) {
+    for (int i = 0; i < array.length; i++) {
+      System.out.println("[" + i + "] \"" + array[i] + "\"");
+    }
+    System.out.flush();
+  }
+  */
+
+
+  /**
+   * Use printArray() instead. This function causes a warning because the new
+   * print(Object...) and println(Object...) functions can't be reliably
+   * bound by the compiler.
+   */
+  @Deprecated
   static public void println(Object what) {
+    printArray(what);
+  }
+
+
+  static public void printArray(Object what) {
     if (what == null) {
       // special case since this does fuggly things on > 1.1
       System.out.println("null");
@@ -5864,6 +5917,13 @@ public class PApplet extends Applet
    * Rewritten for 0115 to read/write RLE-encoded targa images.
    * For 0125, non-RLE encoded images are now supported, along with
    * images whose y-order is reversed (which is standard for TGA files).
+   * <p>
+   * A version of this function is in MovieMaker.java. Any fixes here
+   * should be applied over in MovieMaker as well.
+   * <p>
+   * Known issue with RLE encoding and odd behavior in some apps:
+   * https://github.com/processing/processing/issues/2096
+   * Please help!
    */
   protected PImage loadImageTGA(String filename) throws IOException {
     InputStream is = createInput(filename);
@@ -5881,7 +5941,7 @@ public class PApplet extends Applet
       header[2] image type code
       2  (0x02) - Uncompressed, RGB images.
       3  (0x03) - Uncompressed, black and white images.
-      10 (0x0A) - Runlength encoded RGB images.
+      10 (0x0A) - Run-length encoded RGB images.
       11 (0x0B) - Compressed, black and white images. (grayscale?)
 
       header[16] is the bit depth (8, 24, 32)

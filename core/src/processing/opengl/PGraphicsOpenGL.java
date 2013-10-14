@@ -82,8 +82,23 @@ public class PGraphicsOpenGL extends PGraphics {
     "The vertex and fragment shaders have different types";
   static final String WRONG_SHADER_TYPE_ERROR =
     "shader() called with a wrong shader";
+  static final String SHADER_NEED_LIGHT_ATTRIBS =
+    "The provided shader needs light attributes (ambient, diffuse, etc.), but " +
+    "the current scene is unlit, so the default shader will be used instead";
   static final String UNKNOWN_SHADER_KIND_ERROR =
     "Unknown shader kind";
+  static final String NO_TEXLIGHT_SHADER_ERROR =
+    "Your shader needs to be of TEXLIGHT type " +
+    "to render this geometry properly, using default shader instead.";
+  static final String NO_LIGHT_SHADER_ERROR =
+    "Your shader needs to be of LIGHT type " +
+    "to render this geometry properly, using default shader instead.";
+  static final String NO_TEXTURE_SHADER_ERROR =
+    "Your shader needs to be of TEXTURE type " +
+    "to render this geometry properly, using default shader instead.";
+  static final String NO_COLOR_SHADER_ERROR =
+    "Your shader needs to be of COLOR type " +
+    "to render this geometry properly, using default shader instead.";
   static final String TOO_LONG_STROKE_PATH_ERROR =
     "Stroke path is too long, some bevel triangles won't be added";
   static final String TESSELLATION_ERROR =
@@ -6303,15 +6318,19 @@ public class PGraphicsOpenGL extends PGraphics {
     } else if (shaderType == PShader.TEXLIGHT) {
       shader = new PolyShader(parent);
       shader.setVertexShader(defTexlightShaderVertURL);
+      ((PolyShader)shader).setType(PShader.TEXLIGHT);
     } else if (shaderType == PShader.LIGHT) {
       shader = new PolyShader(parent);
       shader.setVertexShader(defLightShaderVertURL);
+      ((PolyShader)shader).setType(PShader.LIGHT);
     } else if (shaderType == PShader.TEXTURE) {
       shader = new PolyShader(parent);
+      ((PolyShader)shader).setType(PShader.TEXTURE);
       shader.setVertexShader(defTextureShaderVertURL);
     } else if (shaderType == PShader.COLOR) {
       shader = new PolyShader(parent);
       shader.setVertexShader(defColorShaderVertURL);
+      ((PolyShader)shader).setType(PShader.COLOR);
     } else {
       shader = new PolyShader(parent);
       shader.setVertexShader(defTextureShaderVertURL);
@@ -6353,15 +6372,19 @@ public class PGraphicsOpenGL extends PGraphics {
       } else if (shaderType == PShader.TEXLIGHT) {
         shader = new PolyShader(parent);
         shader.setFragmentShader(defTextureShaderFragURL);
+        ((PolyShader)shader).setType(PShader.TEXLIGHT);
       } else if (shaderType == PShader.LIGHT) {
         shader = new PolyShader(parent);
         shader.setFragmentShader(defColorShaderFragURL);
+        ((PolyShader)shader).setType(PShader.LIGHT);
       } else if (shaderType == PShader.TEXTURE) {
         shader = new PolyShader(parent);
         shader.setFragmentShader(defTextureShaderFragURL);
+        ((PolyShader)shader).setType(PShader.TEXTURE);
       } else if (shaderType == PShader.COLOR) {
         shader = new PolyShader(parent);
         shader.setFragmentShader(defColorShaderFragURL);
+        ((PolyShader)shader).setType(PShader.COLOR);
       } else {
         shader = new PolyShader(parent);
         shader.setVertexShader(defTextureShaderVertURL);
@@ -6485,9 +6508,15 @@ public class PGraphicsOpenGL extends PGraphics {
 
   protected PolyShader getPolyShader(boolean lit, boolean tex) {
     PolyShader shader;
+    boolean useDefault = polyShader == null;
+    if (polyShader != null) {
+      polyShader.setRenderer(this);
+      polyShader.loadAttributes();
+      polyShader.loadUniforms();
+    }
     if (lit) {
       if (tex) {
-        if (polyShader == null) {
+        if (useDefault || !polyShader.checkType(PShader.TEXLIGHT)) {
           if (defTexlightShader == null) {
             defTexlightShader = new PolyShader(parent,
                                                defTexlightShaderVertURL,
@@ -6498,7 +6527,7 @@ public class PGraphicsOpenGL extends PGraphics {
           shader = polyShader;
         }
       } else {
-        if (polyShader == null) {
+        if (useDefault || !polyShader.checkType(PShader.LIGHT)) {
           if (defLightShader == null) {
             defLightShader = new PolyShader(parent,
                                             defLightShaderVertURL,
@@ -6510,8 +6539,13 @@ public class PGraphicsOpenGL extends PGraphics {
         }
       }
     } else {
+      if (polyShader != null && polyShader.accessLightAttribs()) {
+        PGraphics.showWarning(SHADER_NEED_LIGHT_ATTRIBS);
+        useDefault = true;
+      }
+
       if (tex) {
-        if (polyShader == null) {
+        if (useDefault || !polyShader.checkType(PShader.TEXTURE)) {
           if (defTextureShader == null) {
             defTextureShader = new PolyShader(parent,
                                               defTextureShaderVertURL,
@@ -6522,7 +6556,7 @@ public class PGraphicsOpenGL extends PGraphics {
           shader = polyShader;
         }
       } else {
-        if (polyShader == null) {
+        if (useDefault || !polyShader.checkType(PShader.COLOR)) {
           if (defColorShader == null) {
             defColorShader = new PolyShader(parent,
                                             defColorShaderVertURL,
@@ -6534,9 +6568,11 @@ public class PGraphicsOpenGL extends PGraphics {
         }
       }
     }
-    shader.setRenderer(this);
-    shader.loadAttributes();
-    shader.loadUniforms();
+    if (shader != polyShader) {
+      shader.setRenderer(this);
+      shader.loadAttributes();
+      shader.loadUniforms();
+    }
     return shader;
   }
 
@@ -6681,6 +6717,10 @@ public class PGraphicsOpenGL extends PGraphics {
       return false;
     }
 
+    public boolean accessLightAttribs() {
+      return false;
+    }
+
     public void setVertexAttribute(int vboId, int size, int type,
                                    int stride, int offset) { }
     public void setColorAttribute(int vboId, int size, int type,
@@ -6702,6 +6742,8 @@ public class PGraphicsOpenGL extends PGraphics {
 
 
   protected class PolyShader extends BaseShader {
+    protected int type = 0;
+
     protected int vertexLoc;
     protected int colorLoc;
     protected int normalLoc;
@@ -6826,6 +6868,37 @@ public class PGraphicsOpenGL extends PGraphics {
       }
     }
 
+    public boolean hasType() {
+      return COLOR <= type && type <= TEXLIGHT;
+    }
+
+    public void setType(int type) {
+      this.type = type;
+    }
+
+    public int getType() {
+      return type;
+    }
+
+    public boolean checkType(int type) {
+      if (!hasType()) return true;
+
+      if (getType() != type) {
+        if (type == TEXLIGHT) {
+          PGraphics.showWarning(NO_TEXLIGHT_SHADER_ERROR);
+        } else if (type == LIGHT) {
+          PGraphics.showWarning(NO_LIGHT_SHADER_ERROR);
+        } else if (type == TEXTURE) {
+          PGraphics.showWarning(NO_TEXTURE_SHADER_ERROR);
+        } else if (type == COLOR) {
+          PGraphics.showWarning(NO_COLOR_SHADER_ERROR);
+        }
+        return false;
+      }
+
+      return true;
+    }
+
     @Override
     public boolean supportsTexturing() {
       return -1 < textureLoc;
@@ -6844,6 +6917,12 @@ public class PGraphicsOpenGL extends PGraphics {
     @Override
     public boolean accessNormals() {
       return -1 < normalLoc;
+    }
+
+    @Override
+    public boolean accessLightAttribs() {
+      return -1 < ambientLoc || -1 < specularLoc || -1 < emissiveLoc ||
+             -1 < shininessLoc;
     }
 
     @Override

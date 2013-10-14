@@ -1038,6 +1038,7 @@ public class Base {
     // Close the running window, avoid window boogers with multiple sketches
     editor.internalCloseRunner();
 
+//    System.out.println("editors size is " + editors.size());
     if (editors.size() == 1) {
       // For 0158, when closing the last window /and/ it was already an
       // untitled sketch, just give up and let the user quit.
@@ -1077,6 +1078,7 @@ public class Base {
 
       // This will store the sketch count as zero
       editors.remove(editor);
+//      System.out.println("editors size now " + editors.size());
 //      storeSketches();
 
       // Save out the current prefs state
@@ -2080,7 +2082,7 @@ public class Base {
   /**
    * Non-fatal error message with optional stack trace side dish.
    */
-  static public void showWarning(String title, String message, Exception e) {
+  static public void showWarning(String title, String message, Throwable e) {
     if (title == null) title = "Warning";
 
     if (commandLine) {
@@ -2099,7 +2101,7 @@ public class Base {
    */
   static public void showWarningTiered(String title,
                                        String primary, String secondary,
-                                       Exception e) {
+                                       Throwable e) {
     if (title == null) title = "Warning";
 
     final String message = primary + "\n" + secondary;
@@ -3005,7 +3007,7 @@ public class Base {
   }
 
 
-  static public void log(String message, Exception e) {
+  static public void log(String message, Throwable e) {
     if (DEBUG) {
       System.out.println(message);
       e.printStackTrace();

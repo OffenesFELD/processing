@@ -24,6 +24,8 @@
 
 package processing.app.syntax;
 
+import java.awt.Font;
+
 import processing.app.*;
 
 
@@ -194,8 +196,13 @@ public class PdeTextAreaDefaults extends TextAreaDefaults {
     // http://code.google.com/p/processing/issues/detail?id=1275
     rows = 5;
 
-    font = Preferences.getFont("editor.font");
-    antialias = Preferences.getBoolean("editor.antialias");
+    //font = Preferences.getFont("editor.font");
+    String fontFamily = Preferences.get("editor.font.family");
+    int fontSize = Preferences.getInteger("editor.font.size");
+    plainFont = new Font(fontFamily, Font.PLAIN, fontSize);
+    boldFont = new Font(fontFamily, Font.BOLD, fontSize);
+    System.out.println("font is " + plainFont.getFamily() + " / " + plainFont.getName() + " / " + plainFont.getFontName() + " / " + plainFont.getPSName());
+//    antialias = Preferences.getBoolean("editor.antialias");
 
     styles = new SyntaxStyle[Token.ID_COUNT];
 

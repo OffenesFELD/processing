@@ -15,6 +15,55 @@ X cmd-left is bringing up the text area popup
 X   https://github.com/processing/processing/issues/2103
 X still having right-click issues (re-opened)
 X   https://github.com/processing/processing/issues/2103
+X bad tool brings down the environment
+X   http://code.google.com/p/processing/issues/detail?id=798
+X   https://github.com/processing/processing/issues/836
+
+X update with bold version of Source Code Pro
+X   http://www.google.com/fonts#UsePlace:use/Collection:Source+Code+Pro
+_ Editor.applyPreferences() -> painter.setFont() removed
+_   need to instead update defaults, then run from there
+
+cleaning
+o the first time someone hides a tab, put up a msg explaining what it does
+o   "don't warn me about this anymore"
+X   removed this feature a while back
+
+serial
+X closing several bugs because no longer relevant
+X need 64-bit version of RXTX library
+X   http://code.google.com/p/processing/issues/detail?id=1237
+X   https://github.com/processing/processing/issues/1275
+X serial still causing problems on OS X
+X   http://code.google.com/p/processing/issues/detail?id=52
+X   had already been closed
+X serial ports missing from list (OS X)
+X   http://code.google.com/p/processing/issues/detail?id=52
+X   also was marked fixed...
+X Serial.write problem with Bluetooth SPP virtual serial port 
+X   http://code.google.com/p/processing/issues/detail?id=318
+X   was marked duplicate of #52
+X Serial silently fails when invalid port entered as string
+o   https://github.com/processing/processing/issues/2114
+X Serial Issue for RPi (and others)
+o   https://github.com/processing/processing/issues/2066
+X RXTX-2.1-7 doesn't list ports created in /dev with VirtualSerialPortApp
+o   https://github.com/processing/processing/issues/1460
+X Bluetooth serial problems on Windows when connecting to Arduino device
+o   https://github.com/processing/processing/issues/1374
+
+movie maker
+o moviemaker video sizes / usability
+o   http://processing.org/discourse/yabb_beta/YaBB.cgi?board=Exhibition;action=display;num=1211318862
+X add gamma, better image options, etc to MovieMaker
+X TGA files cause Movie Maker to not work properly
+X   https://github.com/processing/processing/issues/1933
+o move Movie Maker out to its own separate tool package (with separate build)
+X   http://code.google.com/p/processing/issues/detail?id=837
+X   https://github.com/processing/processing/issues/875
+X   basically done in more recent releases
+X fix file selection dialog with MovieMaker
+X   copied from PApplet, but not importing PApplet
 
 X add appbundler.jar, otherwise folks have to include Xcode
 _ if they want to build appbundler, they'll need Xcode
@@ -22,16 +71,16 @@ _   and the command line tools Preferences > Downloads > Command Line Tools
 _ appbundler will have an NPE if the osx binary isn't built
 _ also need to have 10.8 version of the SDK (old Xcode won't work)
 
-_ type looks a little feeble on OS X
-_   retina problem? may need to turn off (on?) smoothing
+_ type looks a little feeble on OS X with non-retina machines
+_   https://github.com/processing/processing/issues/2135
 _ type cut off in dialog boxes on OS X retina machines
 _   https://github.com/processing/processing/issues/2116
 _ dialog box icon is fuzzy on OS X retina machines
 _   https://github.com/processing/processing/issues/2117
+_ solution might be our own dialog boxes (see 'dialogs' section)
 
-_ also need to have a central menubar
-_   add the offscreen window hack
-_   otherwise mode change causes "do you want to quit?" on OS X
+_ console font in EditorConsole
+_   Font font = Preferences.getFont("console.font");
 _ fix console font on Windows and Linux with 7u40
 _   the message area text also looks ugly.. can we fix?
 _ add pref to select PDE font (so that CJKV languages work better)
@@ -81,22 +130,23 @@ X   http://www.oracle.com/technetwork/java/javase/jdk-7-readme-429198.html
 
 7u40 switch
 X make OS X launch from its local JRE
+X also need to have a central menubar
+X   add the offscreen window hack
+X   otherwise mode change causes "do you want to quit?" on OS X
+X remove 32- and 64-bit preference from Preferences on OS X
+o try the bundle on Mac Mini running 10.6
+X we become full 64-bit on OS X
+X   meaning that the macosx32 video library goes away
+X   and the preference for launching in 32- or 64-bit mode
 
 _ change how export is handled
 _   remove ability to export cross-platform apps
 _   add ability to embed the current JRE
 _ the case for the embedded JRE
 _   https://github.com/processing/processing/issues/2104
-_ change Windows export to use launch4j instead of the launcher.cpp file
-_   actually call ant from inside p5?
 _ change app stub in OS X exported application
-_ we become full 64-bit on OS X
-_   meaning that the macosx32 video library goes away
-_   and the preference for launching in 32- or 64-bit mode
-_ try the bundle on Mac Mini running 10.6
+_ try installing 10.7.3 on Mac Mini and check whether things run
 _   make sure it's only running on 64-bit machines? 
-_   try installing 10.7.3 on Mac Mini and check whether things run
-_ bring back the splash screen
 _ update github instructions
 _   only JRE needed at this point
 _   switched over to Java 7
@@ -106,6 +156,10 @@ _   JAVA_HOME warnings from Ant can also be ignored
 
 _ appbundler improvements
 _   don't re-copy JRE into work folder if already exists
+_   implement a splash screen
+
+_ change Windows export to use launch4j instead of the launcher.cpp file
+_   actually call ant from inside p5?
 
 high
 _ move old Google Code SVN back to processing.org
@@ -132,6 +186,10 @@ _ add .bat file to lib on windows so that we can get better debugging info
 _ changing modes brings the PDE back on the second screen
 _   the Find window (also the save windows) also have the same problem
 
+post 2.1 cleaning
+_ remove video for macosx32 from the repo permanently
+_ remove the prefs for 32/64-bit from Preferences
+_ remove the extra OS X cruft inside Runner.java
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -146,8 +204,8 @@ _ import p5 reference into the javadoc
 _ local web server to run reference from .zip?
 _   no more gazillion file nastiness
 _ yahoo search example is out of date (included in the examples? the book?)
-_ document the move of the auto format menu
-_   in the book(s)? in the reference?
+o document the move of the auto format menu
+o   in the book(s)? in the reference?
 _ improve documentation of the pdf stuff
 _   be clearer about the font setup stuff
 _   fonts by default not working that well?
@@ -176,8 +234,6 @@ _   and that java2d should complain if people try it
 _ method to go from function name to the included examples where used?
 _ encourage use of set() instead of point() in the drawing api
 _   http://processing.org/discourse/yabb_beta/YaBB.cgi?board=SoftwareBugs;action=display;num=1114204116
-_ moviemaker video sizes / usability
-_   http://processing.org/discourse/yabb_beta/YaBB.cgi?board=Exhibition;action=display;num=1211318862
 _ other projects on which p5 is built 
 _   no longer oro matcher and jikes
 _   add: quaqua, jna, registry stuff, .. ?
@@ -324,15 +380,11 @@ PDE - Processing Development Environment
 
 PDE / Dialogs
 
-_ proper dialog support
-_   http://javagraphics.blogspot.com/2008/06/joptionpane-making-alternative.html
 _ two-tiered dialogs for everything - use big font/little font style throughout
 _   http://javagraphics.blogspot.com/2008/06/joptionpane-making-alternative.html
 _ option to suppress warning dialogs
 _   starting with the one about modifying the sketch name for spaces
 _   http://code.google.com/p/processing/issues/detail?id=7
-_ the first time someone hides a tab, put up a msg explaining what it does
-_   "don't warn me about this anymore"
 _ add "don't warn me about this" for sketch renaming
 _   make sure renamed version doesn't exist already
 _ prompt user before nuking applet or application folders
@@ -372,7 +424,8 @@ _ missing brackets, unmatched brackets
 _   examples added to the bug report
 _   http://code.google.com/p/processing/issues/detail?id=6
 _ enums not supported properly
-_   http://code.google.com/p/processing/issues/detail?id=1352
+_   https://github.com/processing/processing/issues/1390
+X   http://code.google.com/p/processing/issues/detail?id=1352
 
 low (features)
 _ combining char/int/etc casts in one statement causes preproc trouble
@@ -554,6 +607,8 @@ _ see how library installation goes, then possibly do same w/ examples
 
 PDE / Libraries
 
+_ Add a means to specify packages to import in library.properties
+_   https://github.com/processing/processing/issues/2134
 _ need to deal with classpath conflicts
 _   avoid garbage that people have installed on their machines
 _   antlr.jar in the classpath will cause trouble.. 
@@ -598,7 +653,8 @@ _   String osName = System.getProperty("os.name");
 _   String osArch = System.getProperty("os.arch");
 _   http://stackoverflow.com/questions/1611357/how-to-make-a-jar-file-that-include-dll-files
 _ add control for dependencies (i.e. svg needs xml), needed for export
-_   http://code.google.com/p/processing/issues/detail?id=70
+X   http://code.google.com/p/processing/issues/detail?id=70
+_   https://github.com/processing/processing/issues/109
 _ need better platform designation setup for libs
 _ library installation should use the sketchbook folder, not the p5 folder
 _   actually enforce this, give users a warning about other libs
@@ -670,6 +726,14 @@ _   move styling to separate constants that are more accessible
 
 PDE / Preferences
 
+_ control text size in console
+o   why aren't prefs from theme.txt showing up in preferences.txt? hrm
+o   or rather, why can't they be overridden? 
+X     because theme.txt data is a different animal / that's part of the point
+_   should fonts at least be in prefs.txt?
+_   http://code.google.com/p/processing/issues/detail?id=226
+_   https://github.com/processing/processing/issues/265
+
 _ the .macosx, .linux, etc prefs should be stripped
 _   only use them on first load, and merge into preferences.txt
 _ Editor.applyFrame() may not have a valid 'editor' object to work with
@@ -680,12 +744,6 @@ _ clear up prefs so that multiple editors don't trash each other's prefs
 _   when are prefs saved? could instead save whenever changes are made
 _   and then if the file gets modified, it'll put up an error message
 _   also, this may be part of why other sketches aren't reloading properly
-_ control text size in console
-o   why aren't prefs from theme.txt showing up in preferences.txt? hrm
-o   or rather, why can't they be overridden? 
-X     because theme.txt data is a different animal / that's part of the point
-_   should fonts at least be in prefs.txt?
-_   http://code.google.com/p/processing/issues/detail?id=226
 _ simple prefs implementation to set key/value pairs using a JTable
 _ separate prefs and sketch state info?
 _   this would mean prefs being rewritten far less
@@ -700,6 +758,7 @@ _ preferences window has been hit with the ugly stick
 _   redo panel to use proper Box layout etc
 _   also needs to look good across all platforms
 _   http://code.google.com/p/processing/issues/detail?id=28
+_   https://github.com/processing/processing/issues/67
 _ make available the background colors for present mode, stop button color
 _   isolate color chooser into a simpler/smaller class outside tools
 _   then can also use from inside processing applications as well
@@ -755,18 +814,10 @@ TOOLS / General
 _ create default tools folder (just like libraries)
 _ for tools, maybe don't run on event thread? (makes the gui hang)
 _   but instead, things that affect gui need to be called w/ invokeLater?
-_ bad tool brings down the environment
-_   http://code.google.com/p/processing/issues/detail?id=798
 _ need a proper means to handle command keys for tools (?)
 _   http://code.google.com/p/processing/issues/detail?id=44
 _ handle native code for tools menu (?)
 _   http://code.google.com/p/processing/issues/detail?id=109
-
-
-TOOLS / Movie Maker
-
-_ move Movie Maker out to its own separate tool package (with separate build)
-_   http://code.google.com/p/processing/issues/detail?id=837
 
 
 TOOLS / Ideas 
@@ -788,10 +839,12 @@ _   update will update classes from shared in the current folder
 
 TOOLS / Auto Format
 
+_ for() loop with nothing inside parens crashes Auto Format
+_   https://github.com/processing/processing/issues/2141
 _ extra indent found
-_   http://code.google.com/p/processing/issues/detail?id=1003
+_   https://github.com/processing/processing/issues/1041
 _ Switch block cases not indented
-_   http://code.google.com/p/processing/issues/detail?id=1004
+_   https://github.com/processing/processing/issues/1042
 _ do a better job of maintaining cursor 
 _ only auto-format a particular section of code
 _   set the 'tabs' var based on how many spaces on previous line
@@ -808,18 +861,6 @@ LIBRARIES / General
 
 _ need to unpack InvocationTargetException in xxxxxxEvent calls
 _   http://processing.org/discourse/yabb_beta/YaBB.cgi?board=VideoCamera;action=display;num=1116850328#3
-
-
-LIBRARIES / Serial
-
-_ need 64-bit version of RXTX library
-_   http://code.google.com/p/processing/issues/detail?id=1237
-_ serial still causing problems on OS X
-_   http://code.google.com/p/processing/issues/detail?id=52
-_ serial ports missing from list (OS X)
-_   http://code.google.com/p/processing/issues/detail?id=52
-_ Serial.write problem with Bluetooth SPP virtual serial port 
-_   http://code.google.com/p/processing/issues/detail?id=318
 
 
 
